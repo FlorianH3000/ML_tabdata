@@ -44,13 +44,10 @@ metric_final = 0
 # hyperparameter search
 # =============================================================================
 
-cv_splits_top = 4
-# n_estimators = 5
-
-
-for x in np.arange(2, cv_splits_top, 1):
+cv_splits_top = 10
+for x in np.arange(8, cv_splits_top, 1):
     cv_splits = x
-
+    
     # =============================================================================
     # XGBoost
     # =============================================================================
@@ -64,26 +61,25 @@ for x in np.arange(2, cv_splits_top, 1):
     # =============================================================================
     #  define model
     # =============================================================================
-    model = XGBClassifier(scale_pos_weight=weight, n_jobs=3)
+    # model = XGBClassifier(scale_pos_weight=weight, n_jobs=3)
     
     
     # =============================================================================
     # cross validation 
     # =============================================================================
-    skf = StratifiedKFold(n_splits=cv_splits)
+    skf = StratifiedKFold(n_splits=cv_splits, shuffle=True)
     skf.get_n_splits(data_input, data_label)
     final_val_acc = list()
-    cv_counter = 1
+            
+    i = 0
+    val0_0, val1_0 = list(), list()
+    val0_sum, val1_sum, = [0]*1000, [0]*1000
+    xgb_auc, acc, f1, precision, recall, specificity = 0,0,0,0,0,0
     
     for train_index, val_index in skf.split(data_input, data_label):
         trainX, testX = data_input[train_index], data_input[val_index]
         trainy, testy = data_label[train_index], data_label[val_index]
      
-        i = 0
-        val0_0, val1_0 = list(), list()
-        val0_sum, val1_sum, = [0]*1000, [0]*1000
-        xgb_auc, acc, f1, precision, recall, specificity = 0,0,0,0,0,0
-    
     
         # generate a no skill prediction (majority class)
         ns_probs = [0 for _ in range(len(testy))]
@@ -169,7 +165,6 @@ for x in np.arange(2, cv_splits_top, 1):
     ### accuracy = (tp + tn) / /(tp + tn + fp + fn)
     acc = acc/cv_splits
 
-    
     # summarize scores
     xgb_auc = xgb_auc/cv_splits
     
@@ -184,6 +179,8 @@ for x in np.arange(2, cv_splits_top, 1):
     
     ### specificity = tn/(tn + fp)
     specificity = specificity/cv_splits
+    
+    print('::::::::::::::::::::::::::::::::::::::::::::::::::::::::::', cv_splits)
     
     if metric_final < xgb_auc:
         metric_final = xgb_auc
@@ -211,7 +208,7 @@ print('ROC AUC:',  round(xgb_auc_final, 2))
 print('f1/ Dice : ', round(f1_final, 2))
 print('precision: ', round(precision_final, 2))
 print('recall/ sensitivity: ', round(recall_final, 2))
-print('specificity : ', round(specificity_final, 2))
+print('specificity : ', round(specificity_final, 5))
 print('cv_splits_final: ', cv_splits_final)
 
 
